@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost/ha_example
+    username: root
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  redis:
+    host: localhost
+    port: 6379
+
+flyway:
+  enabled: true

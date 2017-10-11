@@ -1,0 +1,98 @@
+version: "3"
+services:
+  mysql_repl_1:
+    image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_mysql-group-replication:latest
+    ports:
+      - "3307:3306"
+    volumes:
+      - "/var/lib/mysql:/var/lib/mysql"
+    environment:
+      MYSQL_DATABASE: ha_example
+      MYSQL_ROOT_PASSWORD: password
+      SERVER_ID: 1
+      GROUP_REPLICATION_PORT: 33061
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ecs2
+
+  mysql_repl_2:
+    image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_mysql-group-replication:latest
+    ports:
+      - "3308:3306"
+    volumes:
+      - "/var/lib/mysql:/var/lib/mysql"
+    environment:
+      MYSQL_DATABASE: ha_example
+      MYSQL_ROOT_PASSWORD: password
+      SERVER_ID: 2
+      GROUP_REPLICATION_PORT: 33061
+      GROUP_REPLICATION_SEEDS: mysql_repl_1:33061
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ecs3
+
+  mysql_repl_3:
+    image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_mysql-group-replication:latest
+    ports:
+      - "3309:3306"
+    volumes:
+      - "/var/lib/mysql:/var/lib/mysql"
+    environment:
+      MYSQL_DATABASE: ha_example
+      MYSQL_ROOT_PASSWORD: password
+      SERVER_ID: 3
+      GROUP_REPLICATION_PORT: 33061
+      GROUP_REPLICATION_SEEDS: mysql_repl_1:33061
+    deploy:
+      placement:
+        constraints:
+          - node.hostname == ecs4
+
+  redis-master:
+    image: redis:3
+    ports: 
+      - 6380:6379
+    command: redis-server
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.hostname == ecs2
+
+  redis-slave:
+    image: redis:3
+    ports:
+      - 6381:6379
+    command: redis-server --slaveof redis-master 6379
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.hostname != ecs2
+
+  redis-sentinel:
+    image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_redis-sentinel:latest
+    ports:
+      - 26379:26379
+    command: redis-server --sentinel
+    deploy:
+      mode: global
+    environment:
+      - MASTER_HOST=redis-master
+      - SENTINEL_PORT=26379
+      - SENTINEL_QUORUM=2
+
+  ha-example-server:
+    image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_ha-example-server:latest
+    ports:
+      - 8080:8080
+    deploy:
+      mode: global
+    environment:
+      - MYSQL_URL=jdbc:mysql:loadbalance://mysql_repl_1:3306,mysql_repl_2:3306,mysql_repl_3:3306/ha_example
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=password
+      - REDIS_SENTINEL_MASTER=mymaster
+      - REDIS_SENTINEL_NODES=redis-sentinel:26379

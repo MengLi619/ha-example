@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: ${MYSQL_URL}
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  redis:
+    sentinel:
+      master: ${REDIS_SENTINEL_MASTER}
+      nodes: ${REDIS_SENTINEL_NODES}
+
+flyway:
+  enabled: true
