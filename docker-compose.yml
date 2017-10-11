@@ -14,7 +14,7 @@ services:
     deploy:
       placement:
         constraints:
-          - node.hostname == ecs2
+          - node.hostname == manager
 
   mysql_repl_2:
     image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_mysql-group-replication:latest
@@ -59,7 +59,7 @@ services:
       mode: global
       placement:
         constraints:
-          - node.hostname == ecs2
+          - node.hostname == manager
 
   redis-slave:
     image: redis:3
@@ -70,7 +70,7 @@ services:
       mode: global
       placement:
         constraints:
-          - node.hostname != ecs2
+          - node.hostname != manager
 
   redis-sentinel:
     image: registry.cn-beijing.aliyuncs.com/mengli/ha-example_redis-sentinel:latest
